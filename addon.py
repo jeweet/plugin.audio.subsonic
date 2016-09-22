@@ -8,6 +8,8 @@ import xbmcgui
 import xbmcaddon
 import xbmcplugin
 
+from lib import utils
+
 # Make sure library folder is on the path
 addon = xbmcaddon.Addon()
 sys.path.append(xbmc.translatePath(os.path.join(
@@ -40,6 +42,14 @@ class Plugin(object):
         # Create connection
         self.connection = libsonic_extra.SubsonicClient(
             self.url, self.username, self.password)
+        
+        try:
+            # Check connection is OK
+            super(SubsonicClient, self).getLicense()
+        except Exception:
+            utils.show_notification("Unable to reach server.  Please check your settings !")
+            pass
+        
 
     def build_url(self, query):
         """
@@ -263,7 +273,8 @@ class Plugin(object):
 
                 url = self.build_url({
                     "mode": 'album_list_genre',
-                    "foldername": genre_slug.encode("utf-8")})
+                    "foldername": genre_slug.encode("utf-8")
+                })
 
                 li = xbmcgui.ListItem(genre_name)
                 xbmcplugin.addDirectoryItem(
