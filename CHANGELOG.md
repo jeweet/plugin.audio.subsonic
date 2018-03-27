@@ -1,5 +1,40 @@
 # Changelog
 
+TODO:
+* Tracknumbers troughout the addon, implementation different in skins
+* Fix hide-artist option
+* All sort methods
+* Star album and artist
+* Show path with artist/album
+* Play button plays artist or album
+* Playlist icon for a playlist
+* Star works for songs, artists and albums
+* Raring stars show rating
+* Starred items have a star icon instead of color, dont use kodi rating option
+* Top Songs and radio feature in artist folder
+* Fanart / thumb artist auto download, also show f.e. in skin aura landscape
+* Show music folder as genre in artist list for an artist, filter option
+* Improve caching system, random - album - back different list
+* Scrobble to lastfm
+* Search filter GUI for tracks and albums
+* Crash on Kodi 18 alpha
+
+## v3.0.0
+(Forked from 2.0.8 by gordielachance)
+Released 27-03-2018
+* Fixed the list of artist-folder content recursive, to result in a long list of tracks
+* Changed the complete addon menu structure, single root page
+* Added icons to menu options
+* Removed the tag based library browse mode
+* Added option to merge media-folders
+* Improved metadata implementation
+* Changed the content property for a view, to enable available skin views
+* Added option to set view types for artist, album and song lists
+* Added option to show albums with coverart first in the album list (Looks better in Widgets)
+* First starred implementation, bad looking 
+* Updated the English translation. The only language for now, please contribute!
+* Code cleanup
+
 ## v2.0.8
 Released 29th November 2017 (by Heruwar)
 * Fixes a security issue where the password is sent as plaintext in the URL query parameters when methods from libsonic_extas are used. 

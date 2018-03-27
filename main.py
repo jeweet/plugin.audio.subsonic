@@ -3,6 +3,7 @@
 
 # Module: main
 # Author: G.Breant
+# Forked by: jeweet
 # Created on: 14 January 2017
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 
@@ -18,8 +19,8 @@ from datetime import datetime
 # Add the /lib folder to sys
 sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
-
-import libsonic_extra #TO FIX - we should get rid of this and use only libsonic
+# Libsonic_extra overrides libsonic functions, TO FIX - we should get rid of this and use only libsonic
+import libsonic_extra
 
 from simpleplugin import Plugin
 from simpleplugin import Addon
@@ -27,11 +28,7 @@ from simpleplugin import Addon
 # Create plugin instance
 plugin = Plugin()
 
-# initialize_gettext
-#_ = plugin.initialize_gettext()
-
 connection = None
-cachetime = int(Addon().get_setting('cachetime'))
 
 def popup(text, time=5000, image=None):
     title = plugin.addon.getAddonInfo('name')
@@ -47,7 +44,6 @@ def get_connection():
         connected = False
         
         # Create connection
-
         try:
             connection = libsonic_extra.SubsonicClient(
                 Addon().get_setting('subsonic_url'),
@@ -80,187 +76,125 @@ def root(params):
 
     menus = {
         'folders': {
-            'name':     Addon().get_localized_string(30038),
+            'name':     Addon().get_localized_string(30060),
             'callback': 'browse_folders',
-            'thumb': None
-        },
-        'library': {
-            'name':     Addon().get_localized_string(30019),
-            'callback': 'browse_library',
-            'thumb': None
-        },
-        'albums': {
-            'name':     Addon().get_localized_string(30020),
-            'callback': 'menu_albums',
-            'thumb': None
-        },
-        'tracks': {
-            'name':     Addon().get_localized_string(30021),
-            'callback': 'menu_tracks',
-            'thumb': None
+            'thumb':    'DefaultMusicRoles.png',
+            'fanart':   None,
         },
         'playlists': {
-            'name':     Addon().get_localized_string(30022),
+            'name':     Addon().get_localized_string(30061),
             'callback': 'list_playlists',
-            'thumb': None
+            'thumb':    'DefaultMusicPlaylists.png',
+            'fanart':   None,
+
         },
         'search': {
-            'name':     Addon().get_localized_string(30039),
+            'name':     Addon().get_localized_string(30062),
             'callback': 'search',
-            'thumb': None
+            'thumb':    'DefaultAddonsSearch.png',
+            'fanart':   None,
         },  
     }
-
     # Iterate through categories
-
     for mid in menus:
         
-        # image
         if 'thumb' in menus[mid]:
             thumb = menus[mid]['thumb']
         
         listing.append({
             'label':    menus[mid]['name'],
-            'thumb':    thumb, # Item thumbnail
-            'fanart':   thumb, # Item thumbnail
+            'thumb':    thumb,
+            'fanart':   None,
             'url':      plugin.get_url(
                             action=menus[mid]['callback'],
                             menu_id=mid
                         )
-        })  # Item label
-
-    return plugin.create_listing(
-        listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
-        sort_methods = None, #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
-
-@plugin.action()
-def menu_albums(params):
-    
-    # get connection
-    connection = get_connection()
-    
-    if connection is False:
-        return
-    
-    listing = []
+        })
 
     menus = {
         'albums_newest': {
-            'name':     Addon().get_localized_string(30023),
-            'thumb':    None,
-            'args':     {"ltype": "newest"}
+            'name':     Addon().get_localized_string(30070),
+            'thumb':    'DefaultMusicRecentlyAdded.png',
+            'args':     {"ltype": "newest"},
+            'fanart':   None,
         },
         'albums_frequent': {
-            'name':     Addon().get_localized_string(30024),
-            'thumb': None,
-            'args':     {"ltype": "frequent"}
+            'name':     Addon().get_localized_string(30071),
+            'thumb':    'DefaultMusicTop100Albums.png',
+            'args':     {"ltype": "frequent"},
+            'fanart':   None,
         },
         'albums_recent': {
-            'name':     Addon().get_localized_string(30025),
-            'thumb': None,
-            'args':     {"ltype": "recent"}
+            'name':     Addon().get_localized_string(30072),
+            'thumb':   'DefaultMusicRecentlyPlayed.png',
+            'args':     {"ltype": "recent"},
+            'fanart':   None,
         },
         'albums_random': {
-            'name':     Addon().get_localized_string(30026),
-            'thumb': None,
-            'args':     {"ltype": "random"}
+            'name':     Addon().get_localized_string(30073),
+            'thumb':    'DefaultMusicAlbums.png',
+            'args':     {"ltype": "random"},
+            'fanart':   None,
         }
-    }
-
-    # Iterate through categories
-
+    }	
+    # Iterate through albums
     for menu_id in menus:
         
         menu = menus.get(menu_id)
         
-        # image
         if 'thumb' in menu:
             thumb = menu.get('thumb')
 
         listing.append({
             'label':    menu.get('name'),
-            'thumb':    menu.get('thumb'), # Item thumbnail
-            'fanart':   menu.get('thumb'), # Item thumbnail
+            'thumb':    menu.get('thumb'),
             'url':      plugin.get_url(
                             action=         'list_albums',
                             page=           1,
                             query_args=     json.dumps(menu.get('args')),
                             menu_id=        menu_id
                         )
-        })  # Item label
-
-    return plugin.create_listing(
-        listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
-        #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
-
-@plugin.action()
-def menu_tracks(params):
-    
-    # get connection
-    connection = get_connection()
-    
-    if connection is False:
-        return
-    
-    listing = []
-
+        })  
+        
     menus = {
         'tracks_starred': {
-            'name':             Addon().get_localized_string(30036),
-            'thumb':            None
+            'name':             Addon().get_localized_string(30080),
+            'thumb':            'DefaultMusicTop100Songs.png',
+            'fanart':           None,
         },
         'tracks_random': {
-            'name':             Addon().get_localized_string(30037),
-            'thumb':            None
+            'name':             Addon().get_localized_string(30081),
+            'thumb':            'DefaultMusicSongs.png',
+            'fanart':           None,
         }
     }
-
-    # Iterate through categories
-
+    # Iterate through tracks
     for menu_id in menus:
         
         menu = menus.get(menu_id)
         
-        # image
         if 'thumb' in menu:
             thumb = menu.get('thumb')
 
         listing.append({
             'label':    menu.get('name'),
-            'thumb':    menu.get('thumb'), # Item thumbnail
-            'fanart':   menu.get('thumb'), # Item thumbnail
+            'thumb':    menu.get('thumb'),
             'url':      plugin.get_url(
                 action=         'list_tracks',
                 menu_id=        menu_id
             )
-        })  # Item label
-
+        })
+      
     return plugin.create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
-        #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
+        cache_to_disk = True,
+        sort_methods = None, 
+        view_mode = None, 
+        content = None,
     )
 
 @plugin.action()
-#@plugin.cached(cachetime) # cache (in minutes)
 def browse_folders(params):
-    # get connection
     connection = get_connection()
     
     if connection is False:
@@ -283,17 +217,23 @@ def browse_folders(params):
             )
         }
         listing.append(entry)
-
-    if len(listing) == 1:
+        
+    # Merge folders if setting == True or if there is only 1 media folder.
+    if len(listing) == 1 or Addon().get_setting('merge_folders') == True:
         plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
         return browse_indexes(params)
-    else:
-        return plugin.create_listing(listing)
-
+    else:	
+        return plugin.create_listing(
+        listing,
+        cache_to_disk = True,
+        sort_methods = None,
+        view_mode = None, 
+        content = 'files'        
+        )
+	
 @plugin.action()
-#@plugin.cached(cachetime) # cache (in minutes)
+#@plugin.cached(cachetime) #cache (in minutes)
 def browse_indexes(params):
-    # get connection
     connection = get_connection()
     
     if connection is False:
@@ -305,27 +245,41 @@ def browse_indexes(params):
     # optional folder ID
     folder_id = params.get('folder_id')
     items = connection.walk_index(folder_id)
-
+    
     # Iterate through items
     for item in items:
         entry = {
+            'icon':    'DefaultArtist.png',
             'label':    item.get('name'),
             'url':      plugin.get_url(
                         action=     'list_directory',
                         id=         item.get('id'),
-                        menu_id=    params.get('menu_id')
-            )
+                        menu_id=    params.get('menu_id'),           
+             ),
+             'info': {
+                  'music': {                
+                        'rating': item.get('starred'),
+                        'artist': item.get('name'),
+                   }
+              }            
         }
+#######  
+#        Grab Fanart to populate landscape image, if none == icon        
+#        fanart = removeNonAscii(fanarts.group(1))
+#        infoArt['landscape']   = fanart
+#######
         listing.append(entry)
-        
+                
     return plugin.create_listing(
-        listing
+        listing,
+        cache_to_disk = True,
+        sort_methods = None,
+        view_mode = Addon().get_setting('view_artist'),
+        content = 'artists'
     )
 
 @plugin.action()
-#@plugin.cached(cachetime) # cache (in minutes)
 def list_directory(params):
-    # get connection
     connection = get_connection()
     
     if connection is False:
@@ -335,86 +289,61 @@ def list_directory(params):
     
     # Get items
     id = params.get('id')
-    items = connection.walk_directory(id)
+    items = connection.walk_directory_nonrecursive(id)
+    dircount = 0
     
     # Iterate through items
     for item in items:
+        genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
         
-        #is a directory
+        # Is a directory
         if (item.get('isDir')==True):
+            dircount += 1
             entry = {
                 'label':    item.get('title'),
                 'url':      plugin.get_url(
                             action=     'list_directory',
                             id=         item.get('id'),
                             menu_id=    params.get('menu_id')
-                )
+                            ),
+                'thumb':    connection.getCoverArtUrl(item.get('coverArt')),   
+                'icon':    'DefaultMusicAlbums.png',            
+                'info': {
+                    'music': {              
+                              'year':     item.get('year'),
+                              'artist':   item.get('artist'),     
+                              'rating':   item.get('starred'),
+                              'genre':    genre_setting
+                              }           
+                        }
             }
+            listing.append(entry)
+    
+        # Songs or a combination of both
         else:
             entry = get_entry_track(item,params)
+            listing.append(entry)
         
-
-        listing.append(entry)
-        
-    return plugin.create_listing(
-        listing
-    )
-
-@plugin.action()
-#@plugin.cached(cachetime) # cache (in minutes)
-def browse_library(params):
-    """
-    List artists from the library (ID3 tags)
-    """
+        # Detect view mode    
+        if (dircount == 0):
+            view_mode_setting = Addon().get_setting('view_song')
+        else:
+            view_mode_setting = Addon().get_setting('view_album') 
     
-    # get connection
-    connection = get_connection()
-    
-    if connection is False:
-        return
-
-    listing = []
-
-    # Get items
-    items = connection.walk_artists()
-
-    # Iterate through items
-
-    for item in items:
-        entry = get_entry_artist(item,params)
-
-        #context menu actions
-        context_actions = []
-        if can_star('artist',item.get('id')):
-            action_star =  context_action_star('artist',item.get('id'))
-            context_actions.append(action_star)
-        
-        if len(context_actions) > 0:
-            entry['context_menu'] = context_actions
-        
-        listing.append(entry)
- 
     return plugin.create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        cache_to_disk = True, #cache this view to disk.
-        sort_methods = get_sort_methods('artists',params), #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        content = 'artists' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
+        cache_to_disk = True,
+        sort_methods = None,
+        view_mode = view_mode_setting,
+        content = 'songs' if (dircount == 0) else 'albums'
+	)
 
 @plugin.action()
-#@plugin.cached(cachetime) #cache (in minutes)
 def list_albums(params):
     
-    """
-    List albums from the library (ID3 tags)
-    """
-    
+    #List albums from the library (ID3 tags)
     listing = []
     
-    # get connection
     connection = get_connection()
     
     if connection is False:
@@ -428,7 +357,7 @@ def list_albums(params):
     except:
         pass
 
-    #size
+    #Size, defined in settings
     albums_per_page = int(Addon().get_setting('albums_per_page'))
     query_args["size"] = albums_per_page
     
@@ -450,6 +379,9 @@ def list_albums(params):
     #make a list out of the generator so we can iterate it several times
     items = list(generator)
     
+    if Addon().get_setting('coverart_first'):
+		items = coverart_first(items)
+    
     #check if there is only one artist for this album (and then hide it)
     artists = [item.get('artist',None) for item in items]
     if len(artists) <= 1:
@@ -460,11 +392,6 @@ def list_albums(params):
         album = get_entry_album(item, params)
         listing.append(album)
         
-     # Root menu
-    link_root = navigate_root()
-    listing.append(link_root)
-
-
     if not 'artist_id' in params:
         # Pagination if we've not reached the end of the lsit
         # if type(items) != type(True): TO FIX
@@ -473,21 +400,17 @@ def list_albums(params):
 
     return plugin.create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        cache_to_disk = True, #cache this view to disk.
+        cache_to_disk = True,
         sort_methods = get_sort_methods('albums',params), 
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
+        view_mode = Addon().get_setting('view_album'),
+        content = 'albums'
     )
 
 @plugin.action()
-#@plugin.cached(cachetime) #cache (in minutes)
 def list_tracks(params):
     
     menu_id = params.get('menu_id')
     listing = []
-    
     
     #query
     query_args = {}
@@ -547,8 +470,8 @@ def list_tracks(params):
 
     #check if there is only one artist for this album (and then hide it)
     artists = [item.get('artist',None) for item in items]
-    if len(artists) <= 1:
-        params['hide_artist']   = True
+    if len(artists) <= 0:   #### SHOULD BE 1, NOT WORKING
+        params['hide_artist'] = True
     
     #update stars
     if menu_id == 'tracks_starred':
@@ -562,36 +485,22 @@ def list_tracks(params):
         listing.append(track)
         key +=1
         
-    # Root menu
-    #link_root = navigate_root()
-    #listing.append(link_root)
-        
-    # Pagination if we've not reached the end of the lsit
+    # Pagination if we've not reached the end of the list
     # if type(items) != type(True): TO FIX
     #link_next = navigate_next(params)
     #listing.append(link_next)
 
-
-
     return plugin.create_listing(
         listing,
-        #succeeded =        True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing =   False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         #cache_to_disk =    True, #cache this view to disk.
         sort_methods=       get_sort_methods('tracks',params),
-        #view_mode =        None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        content =           'songs' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
+        view_mode =         Addon().get_setting('view_song'),
+        content =           'songs'
     )
 
-#stars (persistent) cache is used to know what context action (star/unstar) we should display.
-#run this function every time we get starred items.
-#ids can be a single ID or a list
-#using a set makes sure that IDs will be unique.
 @plugin.action()
-#@plugin.cached(cachetime) #cache (in minutes)
 def list_playlists(params):
     
-    # get connection
     connection = get_connection()
     
     if connection is False:
@@ -603,29 +512,25 @@ def list_playlists(params):
     items = connection.walk_playlists()
 
     # Iterate through items
-
     for item in items:
         entry = get_entry_playlist(item,params)
+        
         listing.append(entry)
         
     return plugin.create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
-        sort_methods = get_sort_methods('playlists',params), #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
+        sort_methods = get_sort_methods('playlists',params),
+        view_mode = Addon().get_setting('view_albums'), 
+        content = 'albums',
     )
+
 @plugin.action()
-#@plugin.cached(cachetime) #cache (in minutes)
 def search(params):
 
     dialog = xbmcgui.Dialog()
     d = dialog.input(Addon().get_localized_string(30039), type=xbmcgui.INPUT_ALPHANUM)
     if not d:
         d = " "
-
 
     # get connection
     connection = get_connection()
@@ -649,14 +554,12 @@ def search(params):
         return plugin.create_listing(listing)
 
 
-
 @plugin.action()
 def play_track(params):
     
     id = params['id']
     plugin.log('play_track #' + id);
     
-    # get connection
     connection = get_connection()
     
     if connection is False:
@@ -669,6 +572,7 @@ def play_track(params):
 
     return url
 
+
 @plugin.action()
 def star_item(params):
 
@@ -676,7 +580,7 @@ def star_item(params):
     unstar=  params.get('unstar',False);
     unstar = (unstar) and (unstar != 'None') and (unstar != 'False') #TO FIX better statement ?
     type=    params.get('type');
-    sids = albumIds = artistIds = None
+    sids =   albumIds = artistIds = None
 
     #validate type
     if type == 'track':
@@ -721,10 +625,10 @@ def star_item(params):
     if did_action:
         
         if unstar:
-            message = Addon().get_localized_string(30031)
+            message = Addon().get_localized_string(30091)
             plugin.log('Unstarred %s #%s' % (type,json.dumps(ids)))
         else: #star
-            message = Addon().get_localized_string(30032)
+            message = Addon().get_localized_string(30092)
             plugin.log('Starred %s #%s' % (type,json.dumps(ids)))
             
         stars_cache_update(ids,unstar)
@@ -777,25 +681,26 @@ def download_item(params):
     
 def get_entry_playlist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
+    genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
+
     return {
         'label':    item.get('name'),
         'thumb':    image,
-        'fanart':   image,
         'url':      plugin.get_url(
                         action=         'list_tracks',
                         playlist_id=    item.get('id'),
                         menu_id=        params.get('menu_id')
-
                     ),
-        'info': {'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+        'info': {'music': {
             'title':        item.get('name'),
             'count':        item.get('songCount'),
             'duration':     item.get('duration'),
-            'date':         convert_date_from_iso8601(item.get('created'))
+            'date':         convert_date_from_iso8601(item.get('created')),
+            'genre':        genre_setting,
+            'rating':       item.get('starred'),
         }}
     }
 
-#star (or unstar) an item
 def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
@@ -808,21 +713,22 @@ def get_entry_artist(item,params):
                         menu_id=    params.get('menu_id')
                     ),
         'info': {
-            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+            'music': {
                 'count':    item.get('albumCount'),
                 'artist':   item.get('name')
             }
         }
     }
 
-def get_entry_album(item, params):
-    
-    image = connection.getCoverArtUrl(item.get('coverArt'))
 
+def get_entry_album(item, params):
+    image = connection.getCoverArtUrl(item.get('coverArt'))
+    genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
+ 
     entry = {
         'label':    get_entry_album_label(item,params.get('hide_artist',False)),
         'thumb':    image,
-        'fanart':   image,
+        'icon':    'DefaultMusicAlbums.png',            
         'url': plugin.get_url(
             action=         'list_tracks',
             album_id=       item.get('id'),
@@ -830,13 +736,14 @@ def get_entry_album(item, params):
             menu_id=        params.get('menu_id')
         ),
         'info': {
-            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+            'music': {
                 'count':    item.get('songCount'),
                 'date':     convert_date_from_iso8601(item.get('created')), #date added
                 'duration': item.get('duration'),
                 'artist':   item.get('artist'),
                 'album':    item.get('name'),
-                'year':     item.get('year')
+                'year':     item.get('year'),
+                'genre':    genre_setting,
             }
         }
     }
@@ -861,28 +768,32 @@ def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
     image = connection.getCoverArtUrl(item.get('coverArt'))
+    genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
 
     entry = {
-        'label':    get_entry_track_label(item,params.get('hide_artist')),
+# TO FIX        'label':    get_entry_album_label(item,params.get('hide_artist',False)),
+        'label':    get_entry_track_label(item,params.get('hide-artist')),
+        'tracknumber':  item.get('track'),
         'thumb':    image,
-        'fanart':   image,
         'url':      plugin.get_url(
                         action=     'play_track',
                         id=         item.get('id'),
                         menu_id=    menu_id
                     ),
         'is_playable':  True,
-        'mime':         item.get("contentType"),
-        'info': {'music': { #http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+        'mimetype': item.get("contentType"),
+        'info': 
+			{'music': { 
             'title':        item.get('title'),
             'album':        item.get('album'),
+            'tracknumber':  item.get('track'),
             'artist':       item.get('artist'),
-            'tracknumber':  item.get('tracknumber'),
             'year':         item.get('year'),
-            'genre':        item.get('genre'),
+            'genre':        genre_setting,
             'size':         item.get('size'),
             'duration':     item.get('duration'),
-            'date':         item.get('created')
+            'date':         item.get('created'),
+            'rating':       item.get('starred'),
             }
         }
     }
@@ -900,7 +811,7 @@ def get_entry_track(item,params):
 
     if len(context_actions) > 0:
         entry['context_menu'] = context_actions
-    
+    print(entry['info'])
 
     return entry
 
@@ -911,11 +822,16 @@ def get_starred_label(id,label):
 
 def get_entry_track_label(item,hide_artist = False):
     if hide_artist:
+#        label = '%s. %s' % (
+#            item.get('track', '00'),
+#            item.get('title', '<Unknown>'),
+#        )         
         label = item.get('title', '<Unknown>')
     else:
-        label = '%s - %s' % (
+        label = '%s. %s - %s' % (
+            item.get('track', '00'),
             item.get('artist', '<Unknown>'),
-            item.get('title', '<Unknown>')
+            item.get('title', '<Unknown>'),
         )
 
     return get_starred_label(item.get('id'),label)
@@ -1055,7 +971,7 @@ def navigate_next(params):
     page =      int(params.get('page',1))
     page +=     1
     
-    title =  Addon().get_localized_string(30029) +"(%d)" % (page)
+    title =  Addon().get_localized_string(30090) +"(%d)" % (page)
 
     return {
         'label':    title,
@@ -1083,7 +999,7 @@ def context_action_star(type,id):
 
     if not starred:
 
-        label = Addon().get_localized_string(30033)
+        label = Addon().get_localized_string(30093)
             
     else:
         
@@ -1091,7 +1007,7 @@ def context_action_star(type,id):
         #so we don't have to fetch the starred status for each item
         #(since it is not available into the XML response from the server)
 
-        label = Addon().get_localized_string(30034)
+        label = Addon().get_localized_string(30094)
     
     return (
         label, 
@@ -1120,7 +1036,7 @@ def can_star(type,ids = None):
     
 def context_action_download(type,id):
     
-    label = Addon().get_localized_string(30035)
+    label = Addon().get_localized_string(30095)
     
     return (
         label, 
@@ -1255,20 +1171,18 @@ def download_album(id):
 
     download_tracks(ids)
 
-
+def coverart_first(list_input):
+	america = list()
+	restofworld = list()
+	for item in list_input:
+		if 'coverArt' in item:
+			america.append(item)
+		else:
+			restofworld.append(item)
+	return america + restofworld
 
 # Start plugin from within Kodi.
 if __name__ == "__main__":
     # Map actions
     # Note that we map callable objects without brackets ()
     plugin.run()
-
-
-
-
-
-    
-    
-    
-    
-    

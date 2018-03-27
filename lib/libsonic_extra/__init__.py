@@ -207,7 +207,6 @@ class SubsonicClient(libsonic.Connection):
             *args, **kwargs)
         response["directory"]["child"] = list(
             _children_iterator(response["directory"].get("child")))
-
         return response
 
     def getAlbum(self, *args, **kwargs):
@@ -349,9 +348,19 @@ class SubsonicClient(libsonic.Connection):
         for child in response["directory"]["child"]:
             if child.get("isDir"):
                 for child in self.walk_directory(child["id"]):
-                    yield child
+					yield child
             else:
                 yield child
+
+    def walk_directory_nonrecursive(self, directory_id):
+        """
+        Request a Subsonic music directory and iterate over each item.
+        """
+
+        response = self.getMusicDirectory(directory_id)
+
+        for child in response["directory"]["child"]:
+            yield child
 
     def walk_artist(self, artist_id):
         """

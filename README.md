@@ -1,9 +1,9 @@
-# Subsonic
+## Subsonic
 Kodi plugin to stream, star and download music from Subsonic.
 For feature requests / issues:
-https://github.com/gordielachance/plugin.audio.subsonic/issues
+https://github.com/jeweet/plugin.audio.subsonic/issues
 Contributions are welcome:
-https://github.com/gordielachance/plugin.audio.subsonic
+https://github.com/jeweet/plugin.audio.subsonic
 
 ## Features
 * Browse by artist, albums (newest/most played/recently played/random), tracks (starred/random), and playlists
@@ -12,18 +12,14 @@ https://github.com/gordielachance/plugin.audio.subsonic
 
 ## Installation
 * Navigate to your `.kodi/addons/` folder
-* Clone this repository: `git clone https://github.com/gordielachance/plugin.audio.subsonic.git`
+* Clone this repository: `git clone https://github.com/jeweet/plugin.audio.subsonic.git`
 * (Re)start Kodi.
-
-## TODO
-* Scrobble to Last.FM (http://forum.kodi.tv/showthread.php?tid=195597&pid=2429362#pid2429362)
-* Improve the caching system
-* Search filter GUI for tracks and albums
 
 ## License
 See the `LICENSE` file.
 
 Additional copyright notices:
+* [Previous version of this plugin](https://github.com/gordielachance/plugin.audio.subsonic) by gordielachance
 * [Previous version of this plugin](https://github.com/basilfx/plugin.audio.subsonic) by basilfx
 * [SimplePlugin](https://github.com/romanvm/script.module.simpleplugin/stargazers) by romanvm
 * The original [SubKodi](https://github.com/DarkAllMan/SubKodi) plugin
