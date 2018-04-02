@@ -1,23 +1,34 @@
 # Changelog
 
 TODO:
-* Tracknumbers troughout the addon, implementation different in skins
-* Fix hide-artist option
-* All sort methods
-* Star album and artist
-* Show path with artist/album
+* Artist has genre (maybe music-folder?) and add sort method in artist list
+* Set album artist in compilation album, artist hide per track == false
+* Set star album and artist
+* Download for albums and artists
+* Show path with artist/album on top
+* Add on name in bar configurable
 * Play button plays artist or album
-* Playlist icon for a playlist
-* Star works for songs, artists and albums
-* Raring stars show rating
+* Add playlists and add tracks to playlist?
+* Pagination only in random tracks, not album tracks
+
+* Raring stars show rating (better solution)
 * Starred items have a star icon instead of color, dont use kodi rating option
-* Top Songs and radio feature in artist folder
-* Fanart / thumb artist auto download, also show f.e. in skin aura landscape
-* Show music folder as genre in artist list for an artist, filter option
+
+* Top Songs and radio feature in artist folder and context menu (config option), top songs thumb call subsonic doen voor lastfm plaatje?
+* Fanart / thumb artist auto download, also show f.e. in skin aura landscape, integrate script.metadatautils?
+artist slideshow daemon single image?
 * Improve caching system, random - album - back different list
 * Scrobble to lastfm
-* Search filter GUI for tracks and albums
+* Search filter GUI for tracks and albums, or global search addon
 * Crash on Kodi 18 alpha
+* Integrate statistics in kodi, library songs and artist? Or plugin root page
+
+## v3.0.1
+* Sort methods fixed in all views (fixed missing track numbers also)
+* Keep subsonic sort method for random, frequent, recent and newest albums.
+* Coverart feature only works in random albums list as intended.
+* Removed the colored star label, instead use rating stars for now.
+* Playlists icons added
 
 ## v3.0.0
 (Forked from 2.0.8 by gordielachance)

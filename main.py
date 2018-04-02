@@ -78,7 +78,7 @@ def root(params):
         'folders': {
             'name':     Addon().get_localized_string(30060),
             'callback': 'browse_folders',
-            'thumb':    'DefaultMusicRoles.png',
+            'thumb':    'DefaultMusicArtists.png',
             'fanart':   None,
         },
         'playlists': {
@@ -86,7 +86,6 @@ def root(params):
             'callback': 'list_playlists',
             'thumb':    'DefaultMusicPlaylists.png',
             'fanart':   None,
-
         },
         'search': {
             'name':     Addon().get_localized_string(30062),
@@ -190,7 +189,7 @@ def root(params):
         cache_to_disk = True,
         sort_methods = None, 
         view_mode = None, 
-        content = None,
+        content = 'mixed',
     )
 
 @plugin.action()
@@ -245,25 +244,42 @@ def browse_indexes(params):
     # optional folder ID
     folder_id = params.get('folder_id')
     items = connection.walk_index(folder_id)
-    
+
     # Iterate through items
     for item in items:
         entry = {
-            'icon':    'DefaultArtist.png',
+            'icon':      'DefaultArtist.png',
             'label':    item.get('name'),
             'url':      plugin.get_url(
                         action=     'list_directory',
                         id=         item.get('id'),
                         menu_id=    params.get('menu_id'),           
-             ),
-             'info': {
+            ),
+            'info': {
                   'music': {                
-                        'rating': item.get('starred'),
                         'artist': item.get('name'),
+                        'mediatype': 'artist',
+                        'rating': item.get('starred'),
                    }
-              }            
+            },
+#            'art': {
+#                        'fanart':    item['fanart'],
+#                        'landscape': item['fanart'],
+#            }
         }
-#######  
+        #item = xbmcgui.ListItem(label2=item['name'])
+        #xbmcgui.ListItem.setArt({'thumb': item['thumb'], 'icon': item['thumb'], 'fanart': item['thumb']})
+        #xbmcgui.ListItem.setArt({'fanart': 'fanart.jpg','landscape': item['fanart']})
+####TO FIX        #context menu actions
+        context_actions = []
+        if can_star('artist',item.get('id')):
+            action_star =  context_action_star('artist',item.get('id'))
+            context_actions.append(action_star)
+        if len(context_actions) > 0:
+            entry['context_menu'] = context_actions
+        print(entry['info'])
+
+#######TO FIX  
 #        Grab Fanart to populate landscape image, if none == icon        
 #        fanart = removeNonAscii(fanarts.group(1))
 #        infoArt['landscape']   = fanart
@@ -273,7 +289,7 @@ def browse_indexes(params):
     return plugin.create_listing(
         listing,
         cache_to_disk = True,
-        sort_methods = None,
+        sort_methods = get_sort_methods('artists',params),
         view_mode = Addon().get_setting('view_artist'),
         content = 'artists'
     )
@@ -291,7 +307,8 @@ def list_directory(params):
     id = params.get('id')
     items = connection.walk_directory_nonrecursive(id)
     dircount = 0
-    
+    songcount = 0
+
     # Iterate through items
     for item in items:
         genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
@@ -309,7 +326,8 @@ def list_directory(params):
                 'thumb':    connection.getCoverArtUrl(item.get('coverArt')),   
                 'icon':    'DefaultMusicAlbums.png',            
                 'info': {
-                    'music': {              
+                    'music': {
+                              'mediatype': 'album',
                               'year':     item.get('year'),
                               'artist':   item.get('artist'),     
                               'rating':   item.get('starred'),
@@ -321,21 +339,70 @@ def list_directory(params):
     
         # Songs or a combination of both
         else:
+            songcount += 1
             entry = get_entry_track(item,params)
             listing.append(entry)
         
-        # Detect view mode    
+        # Set view, sort and content 
         if (dircount == 0):
             view_mode_setting = Addon().get_setting('view_song')
+            sort_mode = get_sort_methods('tracks',params)
+            content_mode = 'songs'
+        if (songcount == 0):
+            view_mode_setting = Addon().get_setting('view_album')
+            sort_mode = get_sort_methods('albums',params)
+            content_mode = 'albums' 
+            
         else:
-            view_mode_setting = Addon().get_setting('view_album') 
+            view_mode_setting = Addon().get_setting('view_song')
+            sort_mode = get_sort_methods('tracks',params)
+            content_mode = 'songs'
+
+
+ 
+    if (songcount == 0):
+### SKIP this if nothing there to show...
+     topsongs = {
+                'label':    item.get('artist') + ' top songs',
+                'url':      plugin.get_url(
+                            action=     'list_tracks',
+                            id=         item.get('id'),
+                            menu_id=    params.get('topsongs')
+                            ),
+                'thumb':    'DefaultMusicTop100.png',  
+                'info': {
+                    'music': {
+                              'mediatype': 'album',
+                              'artist':   item.get('artist'),     
+                              }           
+                    }
+                }        
+     listing.append(topsongs)
+
+     artistradio = {
+                'label':    item.get('artist') + ' radio',
+                'url':      plugin.get_url(
+                            action=     'connection.getArtistRadio',
+                            id=         item.get('id'),
+                            menu_id=    params.get('menu_id')
+                            ),
+                'thumb':    'DefaultMusicCompilations.png',  
+                'info': {
+                    'music': {              
+                              'mediatype': 'album',
+                              'artist':   item.get('artist'),     
+                              }           
+                    }
+                }        
+     listing.append(artistradio)
+
     
     return plugin.create_listing(
         listing,
         cache_to_disk = True,
-        sort_methods = None,
+        sort_methods = sort_mode,
         view_mode = view_mode_setting,
-        content = 'songs' if (dircount == 0) else 'albums'
+        content = content_mode,
 	)
 
 @plugin.action()
@@ -379,8 +446,9 @@ def list_albums(params):
     #make a list out of the generator so we can iterate it several times
     items = list(generator)
     
-    if Addon().get_setting('coverart_first'):
-		items = coverart_first(items)
+    #coverart first in random album list if setting is true
+    if Addon().get_setting('coverart_first') and params.get('menu_id') == 'albums_random':
+        items = coverart_first(items)
     
     #check if there is only one artist for this album (and then hide it)
     artists = [item.get('artist',None) for item in items]
@@ -393,8 +461,8 @@ def list_albums(params):
         listing.append(album)
         
     if not 'artist_id' in params:
-        # Pagination if we've not reached the end of the lsit
-        # if type(items) != type(True): TO FIX
+####TO FIX Pagination if we've not reached the end of the lsit
+########### if type(items) != type(True): TO FIX
         link_next = navigate_next(params)
         listing.append(link_next)
 
@@ -446,31 +514,26 @@ def list_tracks(params):
     # Playlist
     elif 'playlist_id' in params:
         generator = connection.walk_playlist(params['playlist_id'])
-        
-        #TO FIX
-        #tracknumber = 0
-        #for item in items:
-        #    tracknumber += 1
-        #    items[item]['tracknumber'] = tracknumber
+##########TO FIX
+#        tracknumber = 0
+#        for item in items:
+#            tracknumber += 1
+#            items[item]['tracknumber'] = tracknumber
         
     # Starred
     elif menu_id == 'tracks_starred':
         generator = connection.walk_tracks_starred()
-        
     
     # Random
     elif menu_id == 'tracks_random':
         generator = connection.walk_tracks_random(**query_args)
-    # Filters
-    #else:
-        #TO WORK
-        
+    
     #make a list out of the generator so we can iterate it several times
     items = list(generator)
 
     #check if there is only one artist for this album (and then hide it)
     artists = [item.get('artist',None) for item in items]
-    if len(artists) <= 0:   #### SHOULD BE 1, NOT WORKING
+    if len(artists) <= 1:
         params['hide_artist'] = True
     
     #update stars
@@ -484,15 +547,15 @@ def list_tracks(params):
         track = get_entry_track(item,params)
         listing.append(track)
         key +=1
-        
-    # Pagination if we've not reached the end of the list
+  
+######TO FIX    # Pagination if we've not reached the end of the list
     # if type(items) != type(True): TO FIX
     #link_next = navigate_next(params)
     #listing.append(link_next)
 
     return plugin.create_listing(
         listing,
-        #cache_to_disk =    True, #cache this view to disk.
+        cache_to_disk =     False,
         sort_methods=       get_sort_methods('tracks',params),
         view_mode =         Addon().get_setting('view_song'),
         content =           'songs'
@@ -589,7 +652,7 @@ def star_item(params):
         artistIds = ids
     elif type == 'album':
         albumIds = ids
-        
+            
     #validate capability
     if not can_star(type,ids):
         return;
@@ -686,12 +749,14 @@ def get_entry_playlist(item,params):
     return {
         'label':    item.get('name'),
         'thumb':    image,
+        'icon':    'DefaultMusicPlaylists.png',            
         'url':      plugin.get_url(
                         action=         'list_tracks',
                         playlist_id=    item.get('id'),
                         menu_id=        params.get('menu_id')
                     ),
         'info': {'music': {
+            'mediatype':    'album',
             'title':        item.get('name'),
             'count':        item.get('songCount'),
             'duration':     item.get('duration'),
@@ -714,6 +779,7 @@ def get_entry_artist(item,params):
                     ),
         'info': {
             'music': {
+                'mediatype':    'artist',
                 'count':    item.get('albumCount'),
                 'artist':   item.get('name')
             }
@@ -728,7 +794,7 @@ def get_entry_album(item, params):
     entry = {
         'label':    get_entry_album_label(item,params.get('hide_artist',False)),
         'thumb':    image,
-        'icon':    'DefaultMusicAlbums.png',            
+        'icon':     'DefaultMusicAlbums.png',            
         'url': plugin.get_url(
             action=         'list_tracks',
             album_id=       item.get('id'),
@@ -737,6 +803,7 @@ def get_entry_album(item, params):
         ),
         'info': {
             'music': {
+                'mediatype': 'album',
                 'count':    item.get('songCount'),
                 'date':     convert_date_from_iso8601(item.get('created')), #date added
                 'duration': item.get('duration'),
@@ -744,6 +811,7 @@ def get_entry_album(item, params):
                 'album':    item.get('name'),
                 'year':     item.get('year'),
                 'genre':    genre_setting,
+                'rating':   item.get('starred'),             
             }
         }
     }
@@ -771,8 +839,7 @@ def get_entry_track(item,params):
     genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
 
     entry = {
-# TO FIX        'label':    get_entry_album_label(item,params.get('hide_artist',False)),
-        'label':    get_entry_track_label(item,params.get('hide-artist')),
+        'label':    get_entry_album_label(item,params.get('hide_artist',False)),
         'tracknumber':  item.get('track'),
         'thumb':    image,
         'url':      plugin.get_url(
@@ -783,7 +850,8 @@ def get_entry_track(item,params):
         'is_playable':  True,
         'mimetype': item.get("contentType"),
         'info': 
-			{'music': { 
+			{'music': {
+            'mediatype':    'song',
             'title':        item.get('title'),
             'album':        item.get('album'),
             'tracknumber':  item.get('track'),
@@ -815,98 +883,76 @@ def get_entry_track(item,params):
 
     return entry
 
-def get_starred_label(id,label):
-    if is_starred(id):
-        label = '[COLOR=FF00FF00]%s[/COLOR]' % label
-    return label
-
 def get_entry_track_label(item,hide_artist = False):
     if hide_artist:
-#        label = '%s. %s' % (
-#            item.get('track', '00'),
-#            item.get('title', '<Unknown>'),
-#        )         
         label = item.get('title', '<Unknown>')
     else:
-        label = '%s. %s - %s' % (
-            item.get('track', '00'),
+        label = '%s - %s' % (
             item.get('artist', '<Unknown>'),
             item.get('title', '<Unknown>'),
         )
-
-    return get_starred_label(item.get('id'),label)
+    return label
 
 def get_entry_album_label(item,hide_artist = False):
     if hide_artist:
         label = item.get('name', '<Unknown>')
     else:
-        label = '%s - %s' % (item.get('artist', '<Unknown>'),
-                             item.get('name', '<Unknown>'))
-    return get_starred_label(item.get('id'),label)
-
+        label = '%s - %s' % (
+              item.get('artist', '<Unknown>'),
+              item.get('name', '<Unknown>'),
+        )
+    return label
 
 def get_sort_methods(type,params):
-    #sort method for list types
-    #https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
-    #TO FIX _DATE or _DATEADDED ?
-    
-    #TO FIX
-    #actually it seems possible to 'restore' the default sorting (by labels)
-    #so our starred items don't get colorized.
-    #so do not sort stuff
-    #see http://forum.kodi.tv/showthread.php?tid=293037
-    return []
-
     sortable = [
         xbmcplugin.SORT_METHOD_NONE,
-        xbmcplugin.SORT_METHOD_LABEL,
-        xbmcplugin.SORT_METHOD_UNSORTED
     ]
     
     if type is 'artists':
         
         artists = [
-            xbmcplugin.SORT_METHOD_ARTIST
+            xbmcplugin.SORT_METHOD_LABEL,
         ]
 
-        sortable = sortable + artists
+        sortable = artists
         
     elif type is 'albums':
         
         albums = [
-            xbmcplugin.SORT_METHOD_ALBUM,
-            xbmcplugin.SORT_METHOD_DURATION,
-            xbmcplugin.SORT_METHOD_DATE,
-            #xbmcplugin.SORT_METHOD_YEAR
+            xbmcplugin.SORT_METHOD_VIDEO_YEAR, 
+            xbmcplugin.SORT_METHOD_LABEL,
         ]
         
         if not params.get('hide_artist',False):
             albums.append(xbmcplugin.SORT_METHOD_ARTIST)
 
-        sortable = sortable + albums
+        # No sort options for subsonic album lists/        
+        if params.get('menu_id') != 'folders':
+            albums = [
+                  xbmcplugin.SORT_METHOD_NONE,
+            ]
+
+        sortable = albums
         
     elif type is 'tracks':
 
         tracks = [
+            xbmcplugin.SORT_METHOD_TRACKNUM,
             xbmcplugin.SORT_METHOD_TITLE,
             xbmcplugin.SORT_METHOD_ALBUM,
-            xbmcplugin.SORT_METHOD_TRACKNUM,
-            #xbmcplugin.SORT_METHOD_YEAR,
-            xbmcplugin.SORT_METHOD_GENRE,
             xbmcplugin.SORT_METHOD_SIZE,
             xbmcplugin.SORT_METHOD_DURATION,
-            xbmcplugin.SORT_METHOD_DATE,
+            xbmcplugin.SORT_METHOD_VIDEO_YEAR,
             xbmcplugin.SORT_METHOD_BITRATE
         ]
         
         if not params.get('hide_artist',False):
             tracks.append(xbmcplugin.SORT_METHOD_ARTIST)
         
-        if params.get('playlist_id',False):
-            xbmcplugin.SORT_METHOD_PLAYLIST_ORDER,
-        
-        
-        sortable = sortable + tracks
+        if params.get('menu_id') == 'playlists':
+            tracks = xbmcplugin.SORT_METHOD_PLAYLIST_ORDER,
+
+        sortable = tracks
         
     elif type is 'playlists':
 
@@ -916,7 +962,7 @@ def get_sort_methods(type,params):
             xbmcplugin.SORT_METHOD_DATE
         ]
         
-        sortable = sortable + playlists
+        sortable = playlists
 
     return sortable
     
@@ -971,7 +1017,7 @@ def navigate_next(params):
     page =      int(params.get('page',1))
     page +=     1
     
-    title =  Addon().get_localized_string(30090) +"(%d)" % (page)
+    title =  Addon().get_localized_string(30090) +" (%d)" % (page)
 
     return {
         'label':    title,
@@ -1029,9 +1075,9 @@ def can_star(type,ids = None):
     if type == 'track':
         return True
     elif type == 'artist':
-        return False
+        return True
     elif type == 'album':
-        return False
+        return True
 
     
 def context_action_download(type,id):
