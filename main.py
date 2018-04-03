@@ -612,7 +612,7 @@ def search(params):
     
     lmenu = []
     types = [
-                {'type': "artist", 'locstr': 30085, 'image': "DefaultArtists.png"},
+                {'type': "artist", 'locstr': 30085, 'image': "DefaultMusicArtists.png"},
                 {'type': "album", 'locstr': 30086, 'image': "DefaultMusicAlbums.png"},
                 {'type': "track", 'locstr': 30087, 'image': "DefaultMusicSongs.png"},
             ]
