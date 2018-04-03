@@ -15,7 +15,26 @@ import json
 import shutil
 import dateutil.parser
 from datetime import datetime
+"""
+#### Debugging with eclipse and pydevd ####
+# This part can be removed safely if you're not using the debugger.
+# Don't forget to remove the dependency on script.module.pydevd from addon.xml as well in this case.
+REMOTE_DBG = False
 
+# append pydev remote debugger
+if REMOTE_DBG:
+    # Make pydev debugger works for auto reload.
+    # Note pydevd module need to be copied in XBMC\system\python\Lib\pysrc
+    try:
+        import pydevd # with the addon script.module.pydevd, only use `import pydevd`
+    # stdoutToServer and stderrToServer redirect stdout and stderr to eclipse console
+        pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
+    except ImportError:
+        sys.stderr.write("Error: " +
+            "You must add org.python.pydev.debug.pysrc to your PYTHONPATH.")
+        sys.exit(1)
+#### /Debugging with eclipse and pydevd ####
+"""
 # Add the /lib folder to sys
 sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
@@ -73,12 +92,19 @@ def root(params):
         return
     
     listing = []
-
+    
+    if Addon().get_setting('merge_folders') == True: 
+		mediafolders = Addon().get_localized_string(30060)
+		thumbnail = 'DefaultMusicArtists.png'
+    else: 
+		mediafolders = Addon().get_localized_string(30059)
+		thumbnail = None
+    
     menus = {
         'folders': {
-            'name':     Addon().get_localized_string(30060),
+            'name':     mediafolders, 
             'callback': 'browse_folders',
-            'thumb':    'DefaultMusicArtists.png',
+            'thumb':    thumbnail,
             'fanart':   None,
         },
         'playlists': {
@@ -244,11 +270,15 @@ def browse_indexes(params):
     # optional folder ID
     folder_id = params.get('folder_id')
     items = connection.walk_index(folder_id)
-
+            
     # Iterate through items
     for item in items:
+        coverartsrc = 'coverArt' if 'coverArt' in item else 'id'
+        image = connection.getCoverArtUrl(item.get(coverartsrc))
+
         entry = {
-            'icon':      'DefaultArtist.png',
+            'icon':     'DefaultArtist.png',
+            'thumb':    image,
             'label':    item.get('name'),
             'url':      plugin.get_url(
                         action=     'list_directory',
@@ -261,15 +291,9 @@ def browse_indexes(params):
                         'mediatype': 'artist',
                         'rating': item.get('starred'),
                    }
-            },
-#            'art': {
-#                        'fanart':    item['fanart'],
-#                        'landscape': item['fanart'],
-#            }
+            }
         }
-        #item = xbmcgui.ListItem(label2=item['name'])
-        #xbmcgui.ListItem.setArt({'thumb': item['thumb'], 'icon': item['thumb'], 'fanart': item['thumb']})
-        #xbmcgui.ListItem.setArt({'fanart': 'fanart.jpg','landscape': item['fanart']})
+
 ####TO FIX        #context menu actions
         context_actions = []
         if can_star('artist',item.get('id')):
@@ -277,13 +301,7 @@ def browse_indexes(params):
             context_actions.append(action_star)
         if len(context_actions) > 0:
             entry['context_menu'] = context_actions
-        print(entry['info'])
 
-#######TO FIX  
-#        Grab Fanart to populate landscape image, if none == icon        
-#        fanart = removeNonAscii(fanarts.group(1))
-#        infoArt['landscape']   = fanart
-#######
         listing.append(entry)
                 
     return plugin.create_listing(
@@ -358,9 +376,7 @@ def list_directory(params):
             sort_mode = get_sort_methods('tracks',params)
             content_mode = 'songs'
 
-
- 
-    if (songcount == 0):
+    if (songcount == 0) and params.get('menu_id') != 'folders':
 ### SKIP this if nothing there to show...
      topsongs = {
                 'label':    item.get('artist') + ' top songs',
@@ -396,7 +412,6 @@ def list_directory(params):
                 }        
      listing.append(artistradio)
 
-    
     return plugin.create_listing(
         listing,
         cache_to_disk = True,
@@ -593,29 +608,103 @@ def search(params):
     dialog = xbmcgui.Dialog()
     d = dialog.input(Addon().get_localized_string(30039), type=xbmcgui.INPUT_ALPHANUM)
     if not d:
-        d = " "
+        return False
+    
+    lmenu = []
+    types = [
+                {'type': "artist", 'locstr': 30085, 'image': "DefaultArtists.png"},
+                {'type': "album", 'locstr': 30086, 'image': "DefaultMusicAlbums.png"},
+                {'type': "track", 'locstr': 30087, 'image': "DefaultMusicSongs.png"},
+            ]
+    
+    for props in types:
+        lmenu.append({
+                        'label':    Addon().get_localized_string(props['locstr']),
+                        'url':      plugin.get_url(
+                                        action=         'get_search_results',
+                                        page=           1,
+                                        query_args=     json.dumps({
+                                                            'query': d,
+                                                            'type': props['type'],
+                                                        }),
+                                        firstEntry=     True,
+                                        ),
+                        'thumb':    props['image'],
+                        'fanart':   None,
+                    })
+    return plugin.create_listing(
+         lmenu, 
+         cache_to_disk=True,         
+         content = 'mixed'
+    )
 
+@plugin.action()
+def get_search_results(params):
     # get connection
     connection = get_connection()
 
     if connection is False:
         return
 
-    listing = []
-
+    query_args = json.loads(params['query_args'])
+    maxitems = int(Addon().get_setting('tracks_per_page' if query_args['type'] == "track" else 'albums_per_page'))
+    
     # Get items
-    items = connection.search2(query=d)
+    # This uses the same maximum amount for all types, but since we only use the one we're interested in that's ok.
+    items = connection.search2(
+                    query=          query_args['query'], 
+                    artistCount=    maxitems, 
+                    artistOffset=   maxitems * params['page'], 
+                    albumCount=     maxitems,
+                    albumOffset=    maxitems * params['page'], 
+                    songCount=      maxitems, 
+                    songOffset=     maxitems * params['page'], 
+                    musicFolderId=  None)
+    
+    itemfunc =   {
+                        "get_entry_artist": get_entry_artist,
+                        "get_entry_album": get_entry_album,
+                        "get_entry_track": get_entry_track,
+                    }
+    listing = []
+    # Maybe we should refactor "track" functions to "song" some day to stay in line with subsonic API lingo
+    type = "song" if query_args['type'] == "track" else query_args['type']
     # Iterate through items
-    for item in items.get('searchResult2').get('song'):
-        entry = get_entry_track( item, params)
-        listing.append(entry)
-
-    if len(listing) == 1:
-        plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
-        return browse_indexes(params)
+    if type in items['searchResult2']:
+        for item in items.get('searchResult2').get(type):
+            entry = itemfunc['get_entry_{0}'.format(query_args['type'])](item, params)
+            listing.append(entry)
+        
+        prev = navigate_prev(params)
+        if prev:
+            listing.append(prev)
+            maxitems += 1
+        # TODO: check that there are actually more results available
+        if len(listing) == maxitems:
+            listing.append(navigate_next(params))
     else:
-        return plugin.create_listing(listing)
+        d = xbmcgui.Dialog().ok(
+                Addon().get_localized_string(30062), # Search
+                Addon().get_localized_string(30088)  # No items found
+            )
+        return
 
+    if query_args['type'] == "track":
+          content = 'songs'
+          view_mode_setting = Addon().get_setting('view_song')
+    elif query_args['type'] == "album":
+          content = 'albums'
+          view_mode_setting = Addon().get_setting('view_album')
+    else:
+          content = 'artists'			 
+          view_mode_setting = Addon().get_setting('view_artist')
+        
+    return plugin.create_listing(
+           listing, 
+           update_listing=not params.get('firstEntry', False),
+           view_mode = view_mode_setting,
+           content = content,
+    )
 
 @plugin.action()
 def play_track(params):
@@ -767,28 +856,29 @@ def get_entry_playlist(item,params):
     }
 
 def get_entry_artist(item,params):
-    image = connection.getCoverArtUrl(item.get('coverArt'))
+    coverartsrc = 'coverArt' if 'coverArt' in item else 'id'
+    image = connection.getCoverArtUrl(item.get(coverartsrc))
+
     return {
-        'label':    get_starred_label(item.get('id'),item.get('name')),
+        'label':    item.get('name'),
+        'icon':     'DefaultArtist.png',
         'thumb':    image,
-        'fanart':   image,
         'url':      plugin.get_url(
-                        action=     'list_albums',
-                        artist_id=  item.get('id'),
-                        menu_id=    params.get('menu_id')
+                        action=     'list_directory',
+                        id=         item.get('id'),
                     ),
         'info': {
             'music': {
                 'mediatype':    'artist',
-                'count':    item.get('albumCount'),
-                'artist':   item.get('name')
+                'artist':       item.get('name')
             }
         }
     }
 
 
 def get_entry_album(item, params):
-    image = connection.getCoverArtUrl(item.get('coverArt'))
+    coverartsrc = 'coverArt' if 'coverArt' in item else 'id'
+    image = connection.getCoverArtUrl(item.get(coverartsrc))
     genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
  
     entry = {
@@ -796,17 +886,17 @@ def get_entry_album(item, params):
         'thumb':    image,
         'icon':     'DefaultMusicAlbums.png',            
         'url': plugin.get_url(
-            action=         'list_tracks',
-            album_id=       item.get('id'),
+            action=         'list_directory',
+            id=             item.get('id'),
             hide_artist=    item.get('hide_artist'),
             menu_id=        params.get('menu_id')
         ),
         'info': {
             'music': {
                 'mediatype': 'album',
-                'count':    item.get('songCount'),
+                #'count':    item.get('songCount'),
                 'date':     convert_date_from_iso8601(item.get('created')), #date added
-                'duration': item.get('duration'),
+                #'duration': item.get('duration'),
                 'artist':   item.get('artist'),
                 'album':    item.get('name'),
                 'year':     item.get('year'),
@@ -835,7 +925,8 @@ def get_entry_album(item, params):
 def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
-    image = connection.getCoverArtUrl(item.get('coverArt'))
+    coverartsrc = 'coverArt' if 'coverArt' in item else 'id'
+    image = connection.getCoverArtUrl(item.get(coverartsrc))
     genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
 
     entry = {
@@ -879,7 +970,6 @@ def get_entry_track(item,params):
 
     if len(context_actions) > 0:
         entry['context_menu'] = context_actions
-    print(entry['info'])
 
     return entry
 
@@ -895,11 +985,11 @@ def get_entry_track_label(item,hide_artist = False):
 
 def get_entry_album_label(item,hide_artist = False):
     if hide_artist:
-        label = item.get('name', '<Unknown>')
+        label = item.get('name',item.get('title', '<Unknown>'))
     else:
         label = '%s - %s' % (
               item.get('artist', '<Unknown>'),
-              item.get('name', '<Unknown>'),
+              item.get('name',item.get('title', '<Unknown>')),
         )
     return label
 
@@ -1018,6 +1108,24 @@ def navigate_next(params):
     page +=     1
     
     title =  Addon().get_localized_string(30090) +" (%d)" % (page)
+
+    return {
+        'label':    title,
+        'url':      plugin.get_url(
+                        action=         params.get('action',None),
+                        page=           page,
+                        query_args=     params.get('query_args',None)
+                    )
+    }
+
+def navigate_prev(params):
+  
+    page =      int(params.get('page',1))
+    if page <= 1:
+        return
+    page -=     1
+    
+    title =  Addon().get_localized_string(30096) +" (%d)" % (page)
 
     return {
         'label':    title,

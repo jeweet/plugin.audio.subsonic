@@ -97,6 +97,10 @@ msgid "Allow self-signed certificates"
 msgstr ""
 
 #### Root menu #####
+msgctxt "#30059"
+msgid "Media folders"
+msgstr ""
+
 msgctxt "#30060"
 msgid "Artists"
 msgstr ""
@@ -133,6 +137,23 @@ msgctxt "#30081"
 msgid "Random tracks"
 msgstr ""
 
+#### Search ####
+msgctxt "#30085"
+msgid "Artists"
+msgstr ""
+
+msgctxt "#30086"
+msgid "Albums"
+msgstr ""
+
+msgctxt "#30087"
+msgid "Tracks"
+msgstr ""
+
+msgctxt "#30088"
+msgid "No items found"
+msgstr ""
+
 #### Other #####
 msgctxt "#30090"
 msgid "Next page"
@@ -156,5 +177,9 @@ msgstr ""
 
 msgctxt "#30095"
 msgid "Download"
+msgstr ""
+
+msgctxt "#30096"
+msgid "Previous page"
 msgstr ""
 
