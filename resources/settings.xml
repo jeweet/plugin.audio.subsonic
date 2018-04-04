@@ -31,6 +31,8 @@
         <setting label="30001" type="lsep" />
         <setting label="30051" id="apiversion" type="labelenum"  values="1.11.0|1.12.0|1.13.0|1.14.0" default="1.14.0"/>
 		<setting label="30052" id="insecure" type="bool"  default="false" />
-		
+        
+        <setting label="30100" type="lsep" />
+        <setting label="30101" id="prev_on_top" type="bool" default="false" />		
 	</category>
 </settings>

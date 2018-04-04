@@ -155,10 +155,6 @@ msgid "No items found"
 msgstr ""
 
 #### Other #####
-msgctxt "#30090"
-msgid "Next page"
-msgstr ""
-
 msgctxt "#30091"
 msgid "Item has been unstarred."
 msgstr ""
@@ -179,7 +175,19 @@ msgctxt "#30095"
 msgid "Download"
 msgstr ""
 
-msgctxt "#30096"
+#### Paging ####
+msgctxt "#30100"
+msgid "Paging"
+msgstr ""
+
+msgctxt "#30101"
+msgid "Show \"Previous page\" item on top"
+msgstr ""
+
+msgctxt "#30105"
 msgid "Previous page"
 msgstr ""
 
+msgctxt "#30106"
+msgid "Next page"
+msgstr ""
