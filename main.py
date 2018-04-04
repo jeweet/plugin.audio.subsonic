@@ -15,7 +15,7 @@ import json
 import shutil
 import dateutil.parser
 from datetime import datetime
-"""
+
 #### Debugging with eclipse and pydevd ####
 # This part can be removed safely if you're not using the debugger.
 # Don't forget to remove the dependency on script.module.pydevd from addon.xml as well in this case.
@@ -34,7 +34,7 @@ if REMOTE_DBG:
             "You must add org.python.pydev.debug.pysrc to your PYTHONPATH.")
         sys.exit(1)
 #### /Debugging with eclipse and pydevd ####
-"""
+
 # Add the /lib folder to sys
 sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
@@ -482,14 +482,12 @@ def list_albums(params):
         listing.append(album)
         
     if not 'artist_id' in params:
-####TO FIX Pagination if we've not reached the end of the lsit
-########### if type(items) != type(True): TO FIX
-        link_next = navigate_next(params)
-        listing.append(link_next)
+        listing = paginate(listing, params, Addon().get_setting('albums_per_page'))
 
     return plugin.create_listing(
         listing,
         cache_to_disk = True,
+        update_listing = bool(params.get('stayAtLevel', False)),
         sort_methods = get_sort_methods('albums',params), 
         view_mode = Addon().get_setting('view_album'),
         content = 'albums'
@@ -573,14 +571,12 @@ def list_tracks(params):
         listing.append(track)
         key +=1
   
-######TO FIX    # Pagination if we've not reached the end of the list
-    # if type(items) != type(True): TO FIX
-    #link_next = navigate_next(params)
-    #listing.append(link_next)
-
+    listing = paginate(listing, params, Addon().get_setting('tracks_per_page'))
+    
     return plugin.create_listing(
         listing,
         cache_to_disk =     False,
+        update_listing =    bool(params.get('stayAtLevel', False)),
         sort_methods=       get_sort_methods('tracks',params),
         view_mode =         Addon().get_setting('view_song'),
         content =           'songs'
@@ -637,7 +633,6 @@ def search(params):
                                                             'query': d,
                                                             'type': props['type'],
                                                         }),
-                                        firstEntry=     True,
                                         ),
                         'thumb':    props['image'],
                         'fanart':   None,
@@ -664,11 +659,11 @@ def get_search_results(params):
     items = connection.search2(
                     query=          query_args['query'], 
                     artistCount=    maxitems, 
-                    artistOffset=   maxitems * params['page'], 
+                    artistOffset=   maxitems * (int(params['page'])-1), 
                     albumCount=     maxitems,
-                    albumOffset=    maxitems * params['page'], 
+                    albumOffset=    maxitems * (int(params['page'])-1), 
                     songCount=      maxitems, 
-                    songOffset=     maxitems * params['page'], 
+                    songOffset=     maxitems * (int(params['page'])-1),
                     musicFolderId=  None)
     
     itemfunc =   {
@@ -685,13 +680,7 @@ def get_search_results(params):
             entry = itemfunc['get_entry_{0}'.format(query_args['type'])](item, params)
             listing.append(entry)
         
-        prev = navigate_prev(params)
-        if prev:
-            listing.append(prev)
-            maxitems += 1
-        # TODO: check that there are actually more results available
-        if len(listing) == maxitems:
-            listing.append(navigate_next(params))
+        listing = paginate(listing, params, maxitems)
     else:
         d = xbmcgui.Dialog().ok(
                 Addon().get_localized_string(30062), # Search
@@ -711,9 +700,9 @@ def get_search_results(params):
         
     return plugin.create_listing(
            listing, 
-           update_listing=not params.get('firstEntry', False),
+           update_listing=bool(params.get('stayAtLevel', False)),
            view_mode = view_mode_setting,
-           content = content,
+           content = content
     )
 
 @plugin.action()
@@ -1124,14 +1113,15 @@ def navigate_next(params):
     page =      int(params.get('page',1))
     page +=     1
     
-    title =  Addon().get_localized_string(30090) +" (%d)" % (page)
+    title =  Addon().get_localized_string(30106) +" (%d)" % (page)
 
     return {
         'label':    title,
         'url':      plugin.get_url(
                         action=         params.get('action',None),
                         page=           page,
-                        query_args=     params.get('query_args',None)
+                        query_args=     params.get('query_args'),
+                        stayAtLevel=    True
                     )
     }
 
@@ -1142,16 +1132,33 @@ def navigate_prev(params):
         return
     page -=     1
     
-    title =  Addon().get_localized_string(30096) +" (%d)" % (page)
+    title =  Addon().get_localized_string(30105) +" (%d)" % (page)
 
     return {
         'label':    title,
         'url':      plugin.get_url(
                         action=         params.get('action',None),
                         page=           page,
-                        query_args=     params.get('query_args',None)
+                        query_args=     params.get('query_args'),
+                        stayAtLevel=    True
                     )
     }
+
+def paginate(list, params, maxlen):
+    '''
+    Add pagination items to listing according to the current configuration.
+    '''
+    prevontop = Addon().get_setting('prev_on_top')
+    prev = navigate_prev(params)
+    plist = []
+    if prev and prevontop:
+        plist.append(prev)
+    plist.extend(list)
+    if prev and not prevontop:
+        plist.append(navigate_prev(params))
+    if len(list) == maxlen:
+        plist.append(navigate_next(params))
+    return plist
 
 def navigate_root():
     return {
