@@ -274,8 +274,11 @@ def browse_indexes(params):
     # Iterate through items
     for item in items:
         coverartsrc = 'coverArt' if 'coverArt' in item else 'id'
-        image = connection.getCoverArtUrl(item.get(coverartsrc))
-
+        if Addon().get_setting('coverart_from_server'): 
+           image = connection.getCoverArtUrl(item.get(coverartsrc)) 
+        else: 
+           image = None
+ 
         entry = {
             'icon':     'DefaultArtist.png',
             'thumb':    image,
@@ -376,42 +379,45 @@ def list_directory(params):
             sort_mode = get_sort_methods('tracks',params)
             content_mode = 'songs'
 
-    if (songcount == 0) and params.get('menu_id') != 'folders':
-### SKIP this if nothing there to show...
+    # Only show in artist directory, maybe check results first?
+    if (songcount == 0) and params.get('menu_id') == 'folders':
      topsongs = {
-                'label':    item.get('artist') + ' top songs',
+                'label':    item.get('artist') + '\'s top songs',
                 'url':      plugin.get_url(
                             action=     'list_tracks',
-                            id=         item.get('id'),
-                            menu_id=    params.get('topsongs')
+                            query_args=  json.dumps({
+                                           'artist': item.get('artist'),
+                                           'count':  Addon().get_setting('tracks_per_page'),
+                                         }),
+                            menu_id=    'tracks_top',
                             ),
                 'thumb':    'DefaultMusicTop100.png',  
                 'info': {
                     'music': {
                               'mediatype': 'album',
-                              'artist':   item.get('artist'),     
+                              'artist':    item.get('artist'),     
                               }           
                     }
                 }        
      listing.append(topsongs)
-
-     artistradio = {
+     """
+     artist_radio = {
                 'label':    item.get('artist') + ' radio',
                 'url':      plugin.get_url(
-                            action=     'connection.getArtistRadio',
+                            action=     'list_tracks',
                             id=         item.get('id'),
-                            menu_id=    params.get('menu_id')
+                            menu_id=    'artist_radio'
                             ),
                 'thumb':    'DefaultMusicCompilations.png',  
                 'info': {
-                    'music': {              
+                    'music': {            
                               'mediatype': 'album',
-                              'artist':   item.get('artist'),     
+                              'artist':    item.get('artist'),     
                               }           
                     }
-                }        
-     listing.append(artistradio)
-
+                }
+     listing.append(artist_radio)
+     """
     return plugin.create_listing(
         listing,
         cache_to_disk = True,
@@ -535,6 +541,10 @@ def list_tracks(params):
 #            tracknumber += 1
 #            items[item]['tracknumber'] = tracknumber
         
+    # Top tracks
+    elif menu_id == 'tracks_top':
+        generator = connection.walk_tracks_top(query_args['artist'])
+           
     # Starred
     elif menu_id == 'tracks_starred':
         generator = connection.walk_tracks_starred()
@@ -857,7 +867,10 @@ def get_entry_playlist(item,params):
 
 def get_entry_artist(item,params):
     coverartsrc = 'coverArt' if 'coverArt' in item else 'id'
-    image = connection.getCoverArtUrl(item.get(coverartsrc))
+    if Addon().get_setting('coverart_from_server'): 
+       image = connection.getCoverArtUrl(item.get(coverartsrc)) 
+    else: 
+       image = None
 
     return {
         'label':    item.get('name'),
@@ -925,21 +938,22 @@ def get_entry_album(item, params):
 def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
+
     coverartsrc = 'coverArt' if 'coverArt' in item else 'id'
     image = connection.getCoverArtUrl(item.get(coverartsrc))
     genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
-
+    
     entry = {
-        'label':    get_entry_album_label(item,params.get('hide_artist',False)),
+        'label':        get_entry_album_label(item,params.get('hide_artist',False)),
         'tracknumber':  item.get('track'),
-        'thumb':    image,
-        'url':      plugin.get_url(
-                        action=     'play_track',
-                        id=         item.get('id'),
-                        menu_id=    menu_id
-                    ),
+        'thumb':        image,
+        'url':          plugin.get_url(
+                           action=     'play_track',
+                           id=         item.get('id'),
+                           menu_id=    menu_id
+                        ),
         'is_playable':  True,
-        'mimetype': item.get("contentType"),
+        'mimetype':     item.get("contentType"),
         'info': 
 			{'music': {
             'mediatype':    'song',
@@ -1016,7 +1030,7 @@ def get_sort_methods(type,params):
         if not params.get('hide_artist',False):
             albums.append(xbmcplugin.SORT_METHOD_ARTIST)
 
-        # No sort options for subsonic album lists/        
+        # No sort options for subsonic album lists        
         if params.get('menu_id') != 'folders':
             albums = [
                   xbmcplugin.SORT_METHOD_NONE,
@@ -1041,6 +1055,9 @@ def get_sort_methods(type,params):
         
         if params.get('menu_id') == 'playlists':
             tracks = xbmcplugin.SORT_METHOD_PLAYLIST_ORDER,
+        
+        if params.get('menu_id') == 'tracks_random' or params.get('menu_id') == 'tracks_starred' or params.get('menu_id') == 'tracks_top':
+            tracks = xbmcplugin.SORT_METHOD_NONE,
 
         sortable = tracks
         

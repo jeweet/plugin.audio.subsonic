@@ -17,7 +17,11 @@
         <setting label="30020" id="view_artist" type="text"  default="50"/>
         <setting label="30021" id="view_album" type="text"  default="50"/>
         <setting label="30022" id="view_song" type="text"  default="50"/>
-        
+        <setting label="30023" id="top_songs" type="labelenum"  default="both" values="album|menu|both|none"/>
+        <setting label="30024" id="artist_radio" type="labelenum"  default="both" values="album|menu|both|none"/>
+        <setting label="30025" id="similar" type="labelenum"  default="both" values="album|menu|both|none"/>
+        <setting label="30026" id="coverart_from_server" type="bool"  default="true"/>
+
         <setting label="30030" type="lsep" />
         <setting label="30031" id="download_folder"  type="folder"  source="auto" option="writeable"/>
         

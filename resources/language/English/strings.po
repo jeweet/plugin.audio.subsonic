@@ -64,6 +64,22 @@ msgctxt "#30022"
 msgid "Default song view"
 msgstr ""
 
+msgctxt "#30023"
+msgid "Show top songs as"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Show artist radio as"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Show artist radio as"
+msgstr ""
+
+msgctxt "#30026"
+msgid "Artist coverart from server"
+msgstr ""
+
 msgctxt "#30030"
 msgid "Download"
 msgstr ""

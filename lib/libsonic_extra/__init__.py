@@ -438,6 +438,17 @@ class SubsonicClient(libsonic.Connection):
 
         for song in response["randomSongs"]["song"]:
             yield song
+
+    def walk_tracks_top(self, artist=None, count=None):
+        """
+        Request top songs for an Artist and iterate over each song.
+        """
+
+        response = self.getTopSongs(
+            artist=artist, count=count)
+
+        for song in response["topSongs"]["song"]:
+            yield song
             
 
     def walk_tracks_starred(self):

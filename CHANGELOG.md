@@ -1,11 +1,11 @@
 # Changelog
 
 TODO:
+* list tracks for album random e.d. is broken!
 * Scrape fanart and artist bio on the fly when possible?
-* Thumb from subsonic is optional!
 * Artist has genre (maybe music-folder?) and add sort method in artist list
 * Set album artist in compilation album?
-* Hide_artist feature not working as intended
+* Hide_artist feature not working as intended, f.e. random tracks and compilation albums
 * Set star for album and artist
 * Download for albums and artists
 * Show path with artist/album/search/etc. on top
@@ -18,11 +18,20 @@ TODO:
 * Pagination only in random tracks, not album tracks
 * Starred items have a star icon instead of color, dont use kodi rating option
 * Top Songs and radio feature in artist folder and context menu (config option), top songs thumb call subsonic doen voor lastfm plaatje?
+* Similar artist feature, with above 3 config options, menu, as album, off, both
 * Improve caching system, random - album - back different list
 * Scrobble to lastfm
 * Search filter GUI for tracks and albums, or global search addon
 * Crash on Kodi 18 alpha
 * Integrate statistics in kodi, library songs and artist? Or plugin root page
+* Top songs, artist radio and similar artist items are configurable *CONFIG OPTIONS ARE THERE
+
+## v3.1.2
+* Top songs for an artist, basic functionality working
+* Made artist thumb from server optional
+
+## v3.1.1
+* bugfixes
 
 ## v3.1.0
 * Added a proper search function (artist, album, track)
