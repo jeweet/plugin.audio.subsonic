@@ -495,7 +495,7 @@ def list_albums(params):
     return plugin.create_listing(
         listing,
         cache_to_disk = True,
-        update_listing = True, #bool(params.get('stayAtLevel', False)),
+        update_listing = bool(params.get('stayAtLevel', False)),
         sort_methods = get_sort_methods('albums',params), 
         view_mode = Addon().get_setting('view_album'),
         content = 'albums'
