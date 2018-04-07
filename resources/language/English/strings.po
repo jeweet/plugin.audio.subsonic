@@ -77,7 +77,7 @@ msgid "Show artist radio as"
 msgstr ""
 
 msgctxt "#30026"
-msgid "Artist coverart from server"
+msgid "Artist artwork from server"
 msgstr ""
 
 msgctxt "#30030"

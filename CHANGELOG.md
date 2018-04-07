@@ -1,30 +1,40 @@
 # Changelog
 
 TODO:
+* Fanart in album, top song, enz enz
 * list tracks for album random e.d. is broken!
-* Scrape fanart and artist bio on the fly when possible?
+* Pagination broken in random tracks (fixed by mvn, need to merge)
+* Scrape fanart and artist bio on the fly when possible? Function to generate a link to a biography? fanart.tv api?
+
 * Artist has genre (maybe music-folder?) and add sort method in artist list
 * Set album artist in compilation album?
+
 * Hide_artist feature not working as intended, f.e. random tracks and compilation albums
+
 * Set star for album and artist
 * Download for albums and artists
+
 * Show path with artist/album/search/etc. on top
 * Add on name in bar configurable, so you can call it Music
-* Play button plays artist or album
+
+* Play button plays artist or album (not possible? 
 * Manage playlists and add tracks to playlist in the plugin
-* Raring stars show rating (better solution?)
+* Rating stars show rating (better solution?)
 * Info works in artist and album
-* Bug: going back to artist list shows the album viewtype
-* Pagination only in random tracks, not album tracks
 * Starred items have a star icon instead of color, dont use kodi rating option
 * Top Songs and radio feature in artist folder and context menu (config option), top songs thumb call subsonic doen voor lastfm plaatje?
 * Similar artist feature, with above 3 config options, menu, as album, off, both
+* Tracknumbers in top tracks, playlist, random? starred?
 * Improve caching system, random - album - back different list
 * Scrobble to lastfm
-* Search filter GUI for tracks and albums, or global search addon
 * Crash on Kodi 18 alpha
+
 * Integrate statistics in kodi, library songs and artist? Or plugin root page
 * Top songs, artist radio and similar artist items are configurable *CONFIG OPTIONS ARE THERE
+
+## v3.1.3
+* Fanart.jpg in subsonic artist folder is used for thumb and fanart (recommend full-hd pics / maybe artist user kodi scraper)
+* Bugfixes
 
 ## v3.1.2
 * Top songs for an artist, basic functionality working

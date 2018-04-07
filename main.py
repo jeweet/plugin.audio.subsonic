@@ -282,6 +282,7 @@ def browse_indexes(params):
         entry = {
             'icon':     'DefaultArtist.png',
             'thumb':    image,
+            'fanart':   image,
             'label':    item.get('name'),
             'url':      plugin.get_url(
                         action=     'list_directory',
@@ -290,9 +291,9 @@ def browse_indexes(params):
             ),
             'info': {
                   'music': {                
-                        'artist': item.get('name'),
-                        'mediatype': 'artist',
-                        'rating': item.get('starred'),
+                        'artist':     item.get('name'),
+                        'mediatype':  'artist',
+                        'rating':     item.get('starred'),
                    }
             }
         }
@@ -333,7 +334,12 @@ def list_directory(params):
     # Iterate through items
     for item in items:
         genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
-        
+
+        if Addon().get_setting('coverart_from_server'): 
+           image = connection.getCoverArtUrl(item.get('parent')) 
+        else: 
+           image = None
+                
         # Is a directory
         if (item.get('isDir')==True):
             dircount += 1
@@ -345,6 +351,7 @@ def list_directory(params):
                             menu_id=    params.get('menu_id')
                             ),
                 'thumb':    connection.getCoverArtUrl(item.get('coverArt')),   
+                'fanart':   image,
                 'icon':    'DefaultMusicAlbums.png',            
                 'info': {
                     'music': {
@@ -392,6 +399,7 @@ def list_directory(params):
                             menu_id=    'tracks_top',
                             ),
                 'thumb':    'DefaultMusicTop100.png',  
+                'fanart':   image,
                 'info': {
                     'music': {
                               'mediatype': 'album',
@@ -487,7 +495,7 @@ def list_albums(params):
     return plugin.create_listing(
         listing,
         cache_to_disk = True,
-        update_listing = bool(params.get('stayAtLevel', False)),
+        update_listing = True, #bool(params.get('stayAtLevel', False)),
         sort_methods = get_sort_methods('albums',params), 
         view_mode = Addon().get_setting('view_album'),
         content = 'albums'
@@ -883,9 +891,12 @@ def get_entry_album(item, params):
     image = connection.getCoverArtUrl(item.get(coverartsrc))
     genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
  
+#    fanart = connection.getCoverArtUrl('') 
+ 
     entry = {
         'label':    get_entry_album_label(item,params.get('hide_artist',False)),
         'thumb':    image,
+#        'fanart':   fanart,
         'icon':     'DefaultMusicAlbums.png',            
         'url': plugin.get_url(
             action=         'list_directory',
@@ -931,11 +942,27 @@ def get_entry_track(item,params):
     coverartsrc = 'coverArt' if 'coverArt' in item else 'id'
     image = connection.getCoverArtUrl(item.get(coverartsrc))
     genre_setting = item.get('genre') if (Addon().get_setting('view_genre')) else None
+    if menu_id == 'tracks_top':
+       album_id = item.get('artist') + '\'s top songs'
+       image = 'DefaultMusicTop100.png'
+    else:
+       album_id = item.get('album')
+
+### TO FIX better starred icon
+    if item.get('starred') != None:
+       icon_image = 'DefaultAudio.png'
+    else:
+       icon_image = 'DefaultMusicSongs.png'
+
+#### TO FIX artist fanart in track list and osd    
+    #fanart = connection.getCoverArtUrl('75549')
     
     entry = {
         'label':        get_entry_album_label(item,params.get('hide_artist',False)),
+		#'fanart':       fanart,
         'tracknumber':  item.get('track'),
         'thumb':        image,
+        'icon':         icon_image,
         'url':          plugin.get_url(
                            action=     'play_track',
                            id=         item.get('id'),
@@ -947,7 +974,7 @@ def get_entry_track(item,params):
 			{'music': {
             'mediatype':    'song',
             'title':        item.get('title'),
-            'album':        item.get('album'),
+            'album':        album_id,
             'tracknumber':  item.get('track'),
             'artist':       item.get('artist'),
             'year':         item.get('year'),
