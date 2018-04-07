@@ -490,7 +490,7 @@ def list_albums(params):
         listing.append(album)
         
     if not 'artist_id' in params:
-        listing = paginate(listing, params, Addon().get_setting('albums_per_page'))
+        listing = paginate(listing, params, albums_per_page)
 
     return plugin.create_listing(
         listing,
@@ -557,7 +557,12 @@ def list_tracks(params):
     
     # Random
     elif menu_id == 'tracks_random':
-        generator = connection.walk_tracks_random(**query_args)
+        generator = connection.walk_tracks_random(
+                                size=tracks_per_page,
+                                genre=query_args.get('genre', None),
+                                fromYear=query_args.get('fromYear', None),
+                                toYear=query_args.get('toYear', None)
+                                )
     
     #make a list out of the generator so we can iterate it several times
     items = list(generator)
@@ -579,7 +584,7 @@ def list_tracks(params):
         listing.append(track)
         key +=1
   
-    listing = paginate(listing, params, Addon().get_setting('tracks_per_page'))
+    listing = paginate(listing, params, tracks_per_page)
     
     return plugin.create_listing(
         listing,
@@ -1136,39 +1141,30 @@ def is_starred(id):
         return False
 
 def navigate_next(params):
-  
-    page =      int(params.get('page',1))
-    page +=     1
-    
-    title =  Addon().get_localized_string(30106) +" (%d)" % (page)
+    params = params.copy()
+    params['page'] = int(params.get('page',1))
+    params['page'] += 1
+    params['stayAtLevel'] = True
+    title =  Addon().get_localized_string(30106) +" (%d)" % (params['page'])
 
     return {
         'label':    title,
-        'url':      plugin.get_url(
-                        action=         params.get('action',None),
-                        page=           page,
-                        query_args=     params.get('query_args'),
-                        stayAtLevel=    True
-                    )
+        'url':      plugin.get_url(**params)
     }
 
 def navigate_prev(params):
-  
-    page =      int(params.get('page',1))
-    if page <= 1:
+    params = params.copy()
+    params['page'] = int(params.get('page',1))
+    if params['page'] <= 1:
         return
-    page -=     1
+    params['page'] -= 1
+    params['stayAtLevel'] = True
     
-    title =  Addon().get_localized_string(30105) +" (%d)" % (page)
+    title =  Addon().get_localized_string(30105) +" (%d)" % (params['page'])
 
     return {
         'label':    title,
-        'url':      plugin.get_url(
-                        action=         params.get('action',None),
-                        page=           page,
-                        query_args=     params.get('query_args'),
-                        stayAtLevel=    True
-                    )
+        'url':      plugin.get_url(**params)
     }
 
 def paginate(list, params, maxlen):
@@ -1182,7 +1178,7 @@ def paginate(list, params, maxlen):
         plist.append(prev)
     plist.extend(list)
     if prev and not prevontop:
-        plist.append(navigate_prev(params))
+        plist.append(prev)
     if len(list) == maxlen:
         plist.append(navigate_next(params))
     return plist
